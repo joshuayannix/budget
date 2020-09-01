@@ -59,6 +59,24 @@ var budgetController = (function() {
       return newItem;
     },
 
+    deleteItem: (type, id) => {
+      let index;
+      // Create an array with all the ID numbers we have
+      // Loop over all items of a type, and return their ID
+      let ids = data.allItems[type].map(current => {
+        return current.id;
+      });
+      index = ids.indexOf(id);
+
+      // If the item is not found in the array, then index is -1.
+      // So we only want to remove something, if the index is not -1
+
+      if (index !== -1) {
+        data.allItems[type].splice(index, 1)
+      }
+
+    },
+
     calculateBudget: function() {
       // calculate total income and expenses
       calculateTotal('exp');
@@ -104,7 +122,8 @@ var UIController = (function() {
     budgetLabel: '.budget__value',
     incomeLabel: '.budget__income--value',
     expensesLabel: '.budget__expenses--value',
-    percentageLabel: '.budget__expenses--percentage'
+    percentageLabel: '.budget__expenses--percentage',
+    container: '.container'
   };
 
   return {
@@ -122,7 +141,7 @@ var UIController = (function() {
       if (type === 'inc') {
         element = DOMstrings.incomeContainer;
         html = `
-          <div class="item clearfix" id="income-${obj.id}">
+          <div class="item clearfix" id="inc-${obj.id}">
             <div class="item__description">${obj.description}</div>
             <div class="right clearfix">
                 <div class="item__value">${obj.value}</div>
@@ -135,7 +154,7 @@ var UIController = (function() {
       } else if (type === 'exp') {
         element = DOMstrings.expensesContainer;
         html = `
-          <div class="item clearfix" id="expense-${obj.id}">
+          <div class="item clearfix" id="exp-${obj.id}">
             <div class="item__description">${obj.description}</div>
             <div class="right clearfix">
                 <div class="item__value">${obj.value}</div>
@@ -150,6 +169,12 @@ var UIController = (function() {
 
       // Insert the HTML into the DOM
       document.querySelector(element).insertAdjacentHTML('beforeend', html);
+    },
+
+    deleteListItem: (selectorID) => {
+      let el = document.getElementById(selectorID);
+      el.parentNode.removeChild(el);
+
     },
 
     clearFields: function() {
@@ -195,6 +220,9 @@ var controller = (function(budgetCtrl, UICtrl) {
         ctrlAddItem()
       }
     });
+
+    document.querySelector(DOM.container).addEventListener('click', ctrlDeleteItem);
+
   };
 
   var updateBudget = function(){
@@ -228,6 +256,26 @@ var controller = (function(budgetCtrl, UICtrl) {
     }
     
   };
+
+  var ctrlDeleteItem = event => {
+    let itemID, splitID, type, ID;
+    itemID = event.target.parentNode.parentNode.parentNode.parentNode.id;
+    if (itemID) {
+      splitID = itemID.split('-');
+      type = splitID[0];
+      ID = parseInt(splitID[1]);
+
+      // 1. delete the item from the data structure
+      budgetCtrl.deleteItem(type, ID);
+
+      // 2. delete the item from the UI
+      UICtrl.deleteListItem(itemID);
+
+      // 3. Update and show the new budget
+      updateBudget();
+
+    }
+  }
 
   return {
     init: function() {
